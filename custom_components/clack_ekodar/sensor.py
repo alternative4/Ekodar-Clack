@@ -138,7 +138,7 @@ class ClackSensor(ClackDeviceEntity, SensorEntity):
     def __init__(self, device, spec: Spec, getter: Callable) -> None:
         desc = ClackEntityDescription(
             key=spec.key,
-            name=spec.name,
+            translation_key=spec.key,
             source=spec.source,
             entity_category=spec.category,
         )

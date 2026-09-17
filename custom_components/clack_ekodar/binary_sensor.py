@@ -32,7 +32,7 @@ class ClackRegeneratingBinarySensor(ClackDeviceEntity, BinarySensorEntity):
             device,
             ClackEntityDescription(
                 key="regenerating",
-                name="Regenerating",
+                translation_key="regenerating",
             ),
         )
         self._attr_device_class = BinarySensorDeviceClass.RUNNING
@@ -50,7 +50,7 @@ class ClackNeedsSaltBinarySensor(ClackDeviceEntity, BinarySensorEntity):
             device,
             ClackEntityDescription(
                 key="service_alarm",
-                name="Service alarm",
+                translation_key="service_alarm",
                 device_class=BinarySensorDeviceClass.PROBLEM,
                 entity_category=EntityCategory.DIAGNOSTIC,
             ),

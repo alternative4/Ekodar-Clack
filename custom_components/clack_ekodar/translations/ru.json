@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Clack Ekodar (local MQTT)",
+        "title": "Clack Ekodar (локальный MQTT)",
         "description": "MAC-адрес Wi-Fi платы клапана в виде 12 hex-символов (например A0B1C2D3E4F5) и префикс топиков.",
         "data": {
           "mac": "MAC-адрес платы",
@@ -12,7 +12,7 @@
       }
     },
     "error": {
-      "invalid_mac": "MAC должен быть из 12 hex-символов."
+      "invalid_mac": "MAC должен состоять из 12 hex-символов."
     },
     "abort": {
       "already_configured": "Устройство уже добавлено."
@@ -21,8 +21,10 @@
   "options": {
     "step": {
       "init": {
+        "title": "Настройки интеграции",
+        "description": "Как часто запрашивать у клапана секции конфигурации (жёсткость, расписание промывки, стадии).",
         "data": {
-          "section_interval": "Интервал опроса настроек (секций), мин"
+          "section_interval": "Интервал опроса секций, мин"
         }
       }
     }
@@ -30,65 +32,65 @@
   "entity": {
     "sensor": {
       "flow": {
-        "name": "Water flow"
+        "name": "Расход воды"
       },
       "capacity_remaining": {
-        "name": "Capacity remaining"
+        "name": "Остаток ресурса"
       },
       "capacity_max": {
-        "name": "Capacity max"
+        "name": "Полный ресурс"
       },
       "capacity_percent": {
-        "name": "Capacity remaining"
+        "name": "Остаток ресурса"
       },
       "days_to_regeneration": {
-        "name": "Days until regeneration"
+        "name": "Дней до промывки"
       },
       "wifi_signal": {
-        "name": "Wi-Fi signal"
+        "name": "Уровень Wi-Fi"
       },
       "regeneration_phase": {
-        "name": "Regeneration phase"
+        "name": "Стадия промывки"
       },
       "regeneration_position": {
-        "name": "Regeneration position"
+        "name": "Позиция поршня"
       },
       "regeneration_time_left": {
-        "name": "Regeneration time left"
+        "name": "Осталось до конца промывки"
       },
       "regeneration_stage_time_left": {
-        "name": "Current stage time left"
+        "name": "Осталось до конца стадии"
       },
       "water_hardness": {
-        "name": "Water hardness"
+        "name": "Жёсткость воды"
       },
       "scheduled_regen_time": {
-        "name": "Scheduled regen time"
+        "name": "Время промывки"
       },
       "valve_clock": {
-        "name": "Valve clock"
+        "name": "Часы клапана"
       },
       "regen_days": {
-        "name": "Regeneration days"
+        "name": "Дни промывок"
       },
       "regen_stages": {
-        "name": "Regeneration stages"
+        "name": "Стадии регенерации"
       }
     },
     "binary_sensor": {
       "regenerating": {
-        "name": "Regenerating"
+        "name": "Идёт промывка"
       },
       "service_alarm": {
-        "name": "Service alarm"
+        "name": "Сервисное напоминание"
       }
     },
     "button": {
       "sync_time": {
-        "name": "Sync valve clock"
+        "name": "Синхронизировать время"
       },
       "reboot": {
-        "name": "Reboot Wi-Fi module"
+        "name": "Перезагрузка Wi-Fi модуля"
       }
     }
   }

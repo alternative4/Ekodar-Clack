@@ -26,5 +26,70 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "flow": {
+        "name": "Water flow"
+      },
+      "capacity_remaining": {
+        "name": "Capacity remaining"
+      },
+      "capacity_max": {
+        "name": "Capacity max"
+      },
+      "capacity_percent": {
+        "name": "Capacity remaining"
+      },
+      "days_to_regeneration": {
+        "name": "Days until regeneration"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi signal"
+      },
+      "regeneration_phase": {
+        "name": "Regeneration phase"
+      },
+      "regeneration_position": {
+        "name": "Regeneration position"
+      },
+      "regeneration_time_left": {
+        "name": "Regeneration time left"
+      },
+      "regeneration_stage_time_left": {
+        "name": "Current stage time left"
+      },
+      "water_hardness": {
+        "name": "Water hardness"
+      },
+      "scheduled_regen_time": {
+        "name": "Scheduled regen time"
+      },
+      "valve_clock": {
+        "name": "Valve clock"
+      },
+      "regen_days": {
+        "name": "Regeneration days"
+      },
+      "regen_stages": {
+        "name": "Regeneration stages"
+      }
+    },
+    "binary_sensor": {
+      "regenerating": {
+        "name": "Regenerating"
+      },
+      "service_alarm": {
+        "name": "Service alarm"
+      }
+    },
+    "button": {
+      "sync_time": {
+        "name": "Sync valve clock"
+      },
+      "reboot": {
+        "name": "Reboot Wi-Fi module"
+      }
+    }
   }
 }
