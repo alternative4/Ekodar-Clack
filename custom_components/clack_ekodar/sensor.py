@@ -70,6 +70,8 @@ SPECS: tuple[Spec, ...] = (
          SensorStateClass.MEASUREMENT),
     Spec("salt_regen_remaining", "Salt: regenerations left", "fn",
          ("salt_regen_remaining",), state_class=SensorStateClass.MEASUREMENT),
+    Spec("salt_status", "Salt status", "fn", ("salt_status",),
+         device_class=SensorDeviceClass.ENUM),
 )
 
 
@@ -118,6 +120,9 @@ def _fn_getter(device, name: str):
         return device.salt.level_kg
     if name == "salt_regen_remaining":
         return device.salt.regen_remaining()
+    if name == "salt_status":
+        # human-facing readiness kind: ok|low|no_data|incomplete (t_3dc7971b)
+        return device.salt.status()["kind"]
     return None
 
 
@@ -163,7 +168,7 @@ async def async_setup_entry(
 
 
 class ClackSensor(ClackDeviceEntity, SensorEntity):
-    SALT_KEYS = ("salt_level", "salt_regen_remaining")
+    SALT_KEYS = ("salt_level", "salt_regen_remaining", "salt_status")
 
     def __init__(self, device, spec: Spec, getter: Callable) -> None:
         desc = SensorEntityDescription(
@@ -172,6 +177,10 @@ class ClackSensor(ClackDeviceEntity, SensorEntity):
             entity_category=spec.category,
         )
         super().__init__(device, desc)
+        if spec.key == "salt_status":
+            # ENUM device class requires the option list (t_3dc7971b)
+            from .salt import STATUS_KINDS
+            self._attr_options = list(STATUS_KINDS)
         self._getter = getter
         self._attr_native_unit_of_measurement = spec.unit
         if spec.device_class:
@@ -188,8 +197,19 @@ class ClackSensor(ClackDeviceEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        if self.entity_description.key == "salt_level":
+        key = self.entity_description.key
+        if key == "salt_level":
             return salt_attributes(self.device)
+        if key == "salt_status":
+            # full warning payload: message in the user's HA language +
+            # machine fields for automations (t_3dc7971b)
+            from .salt import format_status_message
+            status = self.device.salt.status()
+            return {
+                "message_ru": format_status_message(status, "ru"),
+                "message_en": format_status_message(status, "en"),
+                **{k: v for k, v in status.items() if k != "kind"},
+            }
         return None
 
     @property

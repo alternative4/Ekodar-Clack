@@ -1,0 +1,62 @@
+# Salt low-salt / incomplete notification for clack_ekodar (task t_3dc7971b).
+#
+# Copy into HA automations.yaml (or wire the same shape in the UI editor).
+# Replace A0B1C2D3E4F5 with the MAC of your valve (uppercase, 12 hex),
+# pick the target notify service, and choose one message_* attribute (ru/en).
+#
+# Behaviour (matches docs/salt-usage.md §8):
+#   * shows a persistent notification when salt_status enters low/incomplete;
+#   * updates the text when level/regen data changes while still warning;
+#   * dismisses itself automatically once the user presses "Salt added"
+#     (or the data becomes sufficient) and the status returns to ok;
+#   * no_data never notifies — it is "tracking not started", not a warning;
+#     the salt_status sensor still shows it for a visible hint on the card.
+
+- alias: "Clack: предупредить о досыпке соли"
+  id: clack_salt_needs_refill
+  trigger:
+    - platform: state
+      entity_id: sensor.clack_A0B1C2D3E4F5_salt_status
+      to: ["low", "incomplete"]
+    # refresh text while the warning persists (e.g. level dropped further)
+    - platform: state
+      entity_id:
+        - sensor.clack_A0B1C2D3E4F5_salt_level
+        - sensor.clack_A0B1C2D3E4F5_salt_status
+  condition:
+    - condition: state
+      entity_id: sensor.clack_A0B1C2D3E4F5_salt_status
+      state: ["low", "incomplete"]
+  action:
+    - service: persistent_notification.create
+      data:
+        notification_id: clack_salt_low
+        title: "Фильтр воды: нужна соль"
+        message: >-
+          {{ state_attr('sensor.clack_A0B1C2D3E4F5_salt_status',
+          'message_ru') }}
+    # push to phones/messengers only on transitions INTO a warning state,
+    # not on every level refresh:
+    - condition: template
+      value_template: >-
+        {{ trigger.to_state is not none
+           and trigger.to_state.state in ['low', 'incomplete']
+           and trigger.from_state is not none
+           and trigger.from_state.state != trigger.to_state.state }}
+    - service: notify.mobile_app_PHONE   # <- replace with your notify target
+      data:
+        title: "Нужна соль в фильтре"
+        message: >-
+          {{ state_attr('sensor.clack_A0B1C2D3E4F5_salt_status',
+          'message_ru') }}
+
+- alias: "Clack: снять предупреждение о соли"
+  id: clack_salt_cleared
+  trigger:
+    - platform: state
+      entity_id: sensor.clack_A0B1C2D3E4F5_salt_status
+      to: "ok"
+  action:
+    - service: persistent_notification.dismiss
+      data:
+        notification_id: clack_salt_low

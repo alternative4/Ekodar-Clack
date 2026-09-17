@@ -15,12 +15,24 @@ Rules (task t_6718b8d8):
   * regeneration subtracts only when a level is known;
   * division by zero is guarded (invalid config -> kg_per_regen None);
   * warning thresholds (salt_warn_kg / salt_warn_regens) live in the config.
+
+Warning layer (task t_3dc7971b): SaltModel.status() folds the model into a
+human-facing readiness kind — ok | low | no_data | incomplete — plus the
+recommended number of bags; format_status_message() renders the localized
+"what to do" text. `incomplete` is the *deferred* warning: level is tracked
+but per-regen consumption is unknown, so the notification asks to complete
+the settings instead of crying wolf.
 """
 from __future__ import annotations
 
+import math
 import time
 
 MAX_EVENTS = 50
+
+# Human-facing readiness kinds (t_3dc7971b warning layer). Order of precedence
+# in SaltModel.status(): no_data > low > incomplete > ok.
+STATUS_KINDS = ("ok", "low", "no_data", "incomplete")
 
 
 class SaltConfig:
@@ -134,6 +146,64 @@ class SaltModel:
             return rem < self.config.warn_regens
         return False
 
+    # ----- human-facing warning layer (t_3dc7971b) -----
+
+    def status(self) -> dict:
+        """Fold the model into one readiness dict for UI/notifications.
+
+        kind precedence:
+          no_data    — level unknown (salt never added, nothing restored);
+          low        — is_low says so (kg floor or regen threshold crossed);
+          incomplete — level known but kg_per_regen unknown: regeneration
+                       data incomplete, so the regen-count warning is
+                       *deferred* until the config is fixed;
+          ok         — tracked level comfortably above both thresholds.
+        bags_recommended — how many whole bags to top the warning buffer back
+        up (>=1 whenever a refill is advised, 0 on ok, None if bag size is
+        unknown).
+        """
+        per = self.config.kg_per_regen()
+        rem = self.regen_remaining()
+        low = self.is_low
+        if self.level_kg is None:
+            kind = "no_data"
+        elif low:
+            kind = "low"
+        elif per is None or rem is None:
+            kind = "incomplete"
+        else:
+            kind = "ok"
+        return {
+            "kind": kind,
+            "level_kg": self.level_kg,
+            "percent": self.percent(),
+            "regen_remaining": rem,
+            "kg_per_regen": round(per, 3) if per else None,
+            "bags_recommended": self._bags_recommended(kind),
+        }
+
+    def _bags_recommended(self, kind: str) -> int | None:
+        cfg = self.config
+        if kind == "ok":
+            return 0
+        if cfg.bag_kg <= 0:
+            return None
+        if kind in ("no_data", "incomplete"):
+            return 1  # start/correct bookkeeping with a standard bag
+        per = cfg.kg_per_regen()
+        target = None
+        if per is not None and cfg.warn_regens > 0:
+            target = per * (cfg.warn_regens + 1)
+        if cfg.warn_kg > 0:
+            target = cfg.warn_kg if target is None else max(target, cfg.warn_kg)
+        if target is None:
+            return 1
+        need = max(0.0, target - (self.level_kg or 0.0))
+        if cfg.tank_kg > 0 and self.level_kg is not None:
+            need = min(need, max(0.0, cfg.tank_kg - self.level_kg))
+        return max(1, math.ceil(round(need / cfg.bag_kg, 6)))
+
+
     def _event(self, kind: str, ts: float, **extra) -> None:
         self.events.append({"kind": kind, "ts": ts, **extra})
         if len(self.events) > MAX_EVENTS:
@@ -165,6 +235,88 @@ class SaltModel:
         consumed = data.get("regen_consumed")
         if isinstance(consumed, int) and consumed >= 0:
             self.regens_tracked = consumed
+
+
+# ---------------------------------------------------------------------------
+# Warning-layer message rendering (t_3dc7971b). Pure string logic so it is
+# unit-testable; the sensor/notification layers only pick a language.
+
+_RU_BAG = ("мешок", "мешка", "мешков")
+_RU_REGEN = ("промывку", "промывки", "промывок")
+
+
+def _plural_ru(n: int, forms: tuple[str, str, str]) -> str:
+    if n % 100 in range(11, 15):
+        return forms[2]
+    last = n % 10
+    if last == 1:
+        return forms[0]
+    if last in range(2, 5):
+        return forms[1]
+    return forms[2]
+
+
+def _fmt_num(v) -> str:
+    if v is None:
+        return "?"
+    v = float(v)
+    return str(int(v)) if v.is_integer() else f"{v:g}"
+
+
+def format_status_message(status: dict, lang: str = "ru") -> str:
+    """One-line human recommendation derived from SaltModel.status()."""
+    kind = status.get("kind", "ok")
+    level = status.get("level_kg")
+    rem = status.get("regen_remaining")
+    bags = status.get("bags_recommended")
+    ru = lang.startswith("ru")
+
+    if kind == "ok":
+        if ru:
+            txt = f"Соль в норме: {_fmt_num(level)} кг"
+            if rem is not None:
+                txt += f" (~{_fmt_num(rem)} {_plural_ru(int(rem), _RU_REGEN)})"
+            return txt + "."
+        txt = f"Salt level OK: {_fmt_num(level)} kg"
+        if rem is not None:
+            txt += f" (~{_fmt_num(rem)} regens)"
+        return txt + "."
+
+    if kind == "low":
+        bags_txt = (f"{_fmt_num(bags)} "
+                    + (_plural_ru(int(bags), _RU_BAG) if ru
+                       else ("bag" if int(bags) == 1 else "bags"))) \
+            if bags else ("соль" if ru else "salt")
+        if ru:
+            txt = f"Мало соли: осталось {_fmt_num(level)} кг"
+            if rem is not None:
+                txt += f", хватит на {_fmt_num(rem)} {_plural_ru(int(rem), _RU_REGEN)}"
+            return txt + f". Досыпьте {bags_txt} и нажмите «Добавлена соль»."
+        txt = f"Low salt: {_fmt_num(level)} kg left"
+        if rem is not None:
+            unit = "regen" if int(rem) == 1 else "regens"
+            txt += f", ~{_fmt_num(rem)} {unit} remaining"
+        return txt + f". Add {bags_txt} and press \"Salt added\"."
+
+    if kind == "no_data":
+        if ru:
+            return ("Уровень соли неизвестен — учёт ещё не начат. "
+                    "Добавьте соль и нажмите «Добавлена соль», чтобы "
+                    "интеграция начала считать расход.")
+        return ("Salt level unknown — tracking has not started. Add salt "
+                "and press \"Salt added\" so the integration can track "
+                "consumption.")
+
+    # incomplete: level tracked but per-regeneration data unknown → deferred
+    if ru:
+        return (f"Данные о расходе соли неполные: уровень {_fmt_num(level)} кг "
+                "известен, но сколько соли уходит на промывку — нет. "
+                "Укажите «промывок на мешок» или «кг на промывку» в "
+                "настройках интеграции; предупреждение по остатку отложено.")
+    return (f"Salt usage data incomplete: level is {_fmt_num(level)} kg but "
+            "kg per regeneration is unknown. Set \"regenerations per bag\" "
+            "or \"kg per regen\" in the integration options; the low-salt "
+            "warning is deferred until then.")
 
 
 class RegenTracker:

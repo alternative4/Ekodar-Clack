@@ -87,6 +87,15 @@
       },
       "salt_regen_remaining": {
         "name": "Соли хватит на промывок"
+      },
+      "salt_status": {
+        "name": "Статус соли",
+        "state": {
+          "ok": "Норма",
+          "low": "Мало — досыпьте соль",
+          "no_data": "Учёт не начат",
+          "incomplete": "Данные неполные"
+        }
       }
     },
     "binary_sensor": {

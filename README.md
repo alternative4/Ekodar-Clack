@@ -52,6 +52,12 @@ topic, caches the payloads, and periodically polls configuration sections.
 | `water_hardness` (mg-экв/л), `scheduled_regen_time`, `regen_days`, `regen_stages`, `valve_clock` | settings sections (read-only) |
 | `sync_time` (button) | `{"command":208,...}` |
 | `reboot_module` (button) | `{"command":113,"level":0}` |
+| `salt_level` (kg), `salt_regen_remaining`, `salt_status` (enum: ok/low/no_data/incomplete, human message in attributes) | local salt model (see `docs/salt-usage.md`) |
+| `needs_salt` (binary, `problem`) | salt model thresholds |
+| `salt_added` (button) | local bookkeeping: +1 bag, clears the warning |
+
+The `salt_status` sensor drives the "add salt" notification; a ready
+`persistent_notification` automation is in `docs/salt-alert-automation.yaml`.
 
 The "start regeneration" command (`{"command":111}`) is deliberately **not**
 exposed as a UI button — trigger it from an automation if you want it.

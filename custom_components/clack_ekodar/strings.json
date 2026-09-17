@@ -87,6 +87,15 @@
       },
       "salt_regen_remaining": {
         "name": "Salt: regenerations left"
+      },
+      "salt_status": {
+        "name": "Salt status",
+        "state": {
+          "ok": "OK",
+          "low": "Low — add salt",
+          "no_data": "Not tracked",
+          "incomplete": "Data incomplete"
+        }
       }
     },
     "binary_sensor": {
