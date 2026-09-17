@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Clack Ekodar (local MQTT)",
+        "description": "MAC-адрес Wi-Fi платы клапана в виде 12 hex-символов (например A0B1C2D3E4F5) и префикс топиков.",
+        "data": {
+          "mac": "MAC-адрес платы",
+          "prefix": "Префикс топиков (OE/171)",
+          "section_interval": "Интервал опроса настроек, мин"
+        }
+      }
+    },
+    "error": {
+      "invalid_mac": "MAC должен быть из 12 hex-символов."
+    },
+    "abort": {
+      "already_configured": "Устройство уже добавлено."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "section_interval": "Интервал опроса настроек (секций), мин"
+        }
+      }
+    }
+  }
+}
