@@ -77,11 +77,6 @@ class ClackDevice:
 
     # ----- salt -----
 
-    def reload_salt_config(self) -> None:
-        """Re-read salt fields after an options update (no entry reload)."""
-        self.salt_config = SaltConfig.from_mapping(self.entry.options)
-        self.salt.config = self.salt_config
-
     async def load_salt(self) -> None:
         data = await self._salt_store.async_load()
         self.salt.load_state(data)
@@ -95,9 +90,6 @@ class ClackDevice:
             return
         self._salt_dirty = False
         await self._salt_store.async_save(self.salt.to_dict())
-
-    def note_salt_change(self) -> None:
-        self._salt_dirty = True
 
     async def salt_changed(self) -> None:
         """Public hook after any salt-state mutation: persist + refresh."""
