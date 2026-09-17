@@ -22,8 +22,16 @@
     "step": {
       "init": {
         "data": {
-          "section_interval": "Интервал опроса настроек (секций), мин"
-        }
+          "section_interval": "Poll settings sections every (minutes)",
+          "salt_bag_kg": "Salt bag mass, kg",
+          "salt_regens_per_bag": "Regenerations per bag",
+          "salt_kg_per_regen": "Salt per regeneration, kg (0 = auto: bag / regenerations)",
+          "salt_tank_kg": "Brine tank capacity, kg (level clamp)",
+          "salt_warn_kg": "Warn below, kg",
+          "salt_warn_regens": "Warn when fewer than this many regenerations left"
+        },
+        "title": "Integration settings",
+        "description": "Section poll interval and salt accounting (brine tank level model)."
       }
     }
   },
@@ -73,6 +81,12 @@
       },
       "regen_stages": {
         "name": "Regeneration stages"
+      },
+      "salt_level": {
+        "name": "Salt level"
+      },
+      "salt_regen_remaining": {
+        "name": "Salt: regenerations left"
       }
     },
     "binary_sensor": {
@@ -81,6 +95,9 @@
       },
       "service_alarm": {
         "name": "Service alarm"
+      },
+      "needs_salt": {
+        "name": "Low salt"
       }
     },
     "button": {
@@ -89,6 +106,9 @@
       },
       "reboot": {
         "name": "Reboot Wi-Fi module"
+      },
+      "salt_added": {
+        "name": "Salt added"
       }
     }
   }

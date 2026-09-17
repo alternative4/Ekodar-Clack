@@ -11,7 +11,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import PERCENTAGE  # noqa: F401
-from homeassistant.const import EntityCategory, UnitOfTime, UnitOfVolume
+from homeassistant.const import EntityCategory, UnitOfMass, UnitOfTime, UnitOfVolume
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -65,6 +65,11 @@ SPECS: tuple[Spec, ...] = (
          category=EntityCategory.CONFIG),
     Spec("capacity_percent", "Capacity remaining percent", "fn",
          ("capacity_percent",), "%", state_class=SensorStateClass.MEASUREMENT),
+    Spec("salt_level", "Salt level", "fn", ("salt_level",),
+         UnitOfMass.KILOGRAMS, SensorDeviceClass.MASS,
+         SensorStateClass.MEASUREMENT),
+    Spec("salt_regen_remaining", "Salt: regenerations left", "fn",
+         ("salt_regen_remaining",), state_class=SensorStateClass.MEASUREMENT),
 )
 
 
@@ -109,7 +114,29 @@ def _fn_getter(device, name: str):
             return round(100 * s["cap-remain"] / s["cap-max"], 1)
         except (KeyError, TypeError, ZeroDivisionError):
             return None
+    if name == "salt_level":
+        return device.salt.level_kg
+    if name == "salt_regen_remaining":
+        return device.salt.regen_remaining()
     return None
+
+
+def salt_attributes(device) -> dict:
+    """Extra state for the salt_level sensor (thresholds for automations)."""
+    s = device.salt
+    per = s.config.kg_per_regen()
+    return {
+        "percent": s.percent(),
+        "kg_per_regen": round(per, 3) if per else None,
+        "regen_remaining": s.regen_remaining(),
+        "is_low": s.is_low,
+        "warn_kg": s.config.warn_kg,
+        "warn_regens": s.config.warn_regens,
+        "tank_kg": s.config.tank_kg,
+        "bag_kg": s.config.bag_kg,
+        "regens_tracked": s.regens_tracked,
+        "last_added": s.last_added,
+    }
 
 
 async def async_setup_entry(
@@ -156,3 +183,9 @@ class ClackSensor(ClackDeviceEntity, SensorEntity):
         if isinstance(value, float) and value.is_integer():
             return int(value)
         return value
+
+    @property
+    def extra_state_attributes(self):
+        if self.entity_description.key == "salt_level":
+            return salt_attributes(self.device)
+        return None

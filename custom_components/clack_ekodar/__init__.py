@@ -29,6 +29,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.const import Platform
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.storage import Store
 
 from .const import (
     CONF_MAC,
@@ -40,6 +41,7 @@ from .const import (
     DOMAIN,
     SECTION_CODES,
 )
+from .salt import RegenTracker, SaltConfig, SaltModel
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,6 +53,7 @@ class ClackDevice:
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass
+        self.entry = entry
         self.mac: str = entry.data[CONF_MAC].upper()
         prefix = entry.data.get(CONF_PREFIX) or DEFAULT_PREFIX
         self.status_topic = f"{prefix}/{self.mac}"
@@ -65,6 +68,42 @@ class ClackDevice:
         self.sections: dict[int, dict] = {}
         self._listeners: list[Callable[[], None]] = []
         self._unsubs: list[Callable[[], None]] = []
+        # salt accounting
+        self.salt_config = SaltConfig.from_mapping(entry.options)
+        self.salt = SaltModel(self.salt_config)
+        self.regen_tracker = RegenTracker()
+        self._salt_store = Store(hass, 1, f"{DOMAIN}_salt_{self.mac}")
+        self._salt_dirty = False
+
+    # ----- salt -----
+
+    def reload_salt_config(self) -> None:
+        """Re-read salt fields after an options update (no entry reload)."""
+        self.salt_config = SaltConfig.from_mapping(self.entry.options)
+        self.salt.config = self.salt_config
+
+    async def load_salt(self) -> None:
+        data = await self._salt_store.async_load()
+        self.salt.load_state(data)
+        if isinstance(data, dict):
+            _LOGGER.debug("clack %s: salt state restored (%s kg)",
+                          self.mac, self.salt.level_kg)
+
+    async def save_salt(self) -> None:
+        """Persist salt state if dirty (debounced by caller cadence)."""
+        if not self._salt_dirty:
+            return
+        self._salt_dirty = False
+        await self._salt_store.async_save(self.salt.to_dict())
+
+    def note_salt_change(self) -> None:
+        self._salt_dirty = True
+
+    async def salt_changed(self) -> None:
+        """Public hook after any salt-state mutation: persist + refresh."""
+        self._salt_dirty = True
+        await self.save_salt()
+        self._notify()
 
     # ----- pub/sub -----
 
@@ -113,7 +152,14 @@ class ClackDevice:
         if not isinstance(code, int):
             return
         import time
-        data["_seen"] = time.time()
+        ts = time.time()
+        data["_seen"] = ts
+        # completed-regeneration edge for salt accounting
+        if self.regen_tracker.on_message(code, ts):
+            if self.salt.on_regeneration(ts):
+                self._salt_dirty = True
+                self.hass.async_create_task(self.save_salt())
+            self._notify()
         changed = True
         if code == 100:
             self.status = data
@@ -140,6 +186,7 @@ class ClackDevice:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     device = ClackDevice(hass, entry)
+    await device.load_salt()
     await device.start()
 
     entry.async_on_unload(
@@ -147,7 +194,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass, device.fetch_sections,
             timedelta(minutes=max(1, device.section_interval)))
     )
+    entry.async_on_unload(
+        async_track_time_interval(hass, lambda *_: hass.async_create_task(
+            device.save_salt()), timedelta(minutes=10))
+    )
+
     async def _stop() -> None:
+        await device.save_salt()
         await device.stop()
 
     entry.async_on_unload(_stop)

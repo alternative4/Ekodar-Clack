@@ -21,6 +21,7 @@ async def async_setup_entry(
     async_add_entities([
         ClackRegeneratingBinarySensor(device),
         ClackNeedsSaltBinarySensor(device),
+        ClackSaltLowBinarySensor(device),
     ])
 
 
@@ -66,3 +67,32 @@ class ClackNeedsSaltBinarySensor(ClackDeviceEntity, BinarySensorEntity):
         if isinstance(alarm, (int, float)):
             return bool(alarm)
         return str(alarm) in ("1", "true", "True", "Alarm")
+
+
+class ClackSaltLowBinarySensor(ClackDeviceEntity, BinarySensorEntity):
+    """Salt model warning: tracked level below kg or N-regenerations threshold.
+
+    is_on mirrors SaltModel.is_low; None (level unknown — salt was never
+    added, state not restored) reports as `unknown`, not a false alarm.
+    Clears automatically once the Salt-added button raises the level.
+    """
+
+    def __init__(self, device) -> None:
+        super().__init__(
+            device,
+            BinarySensorEntityDescription(
+                key="needs_salt",
+                translation_key="needs_salt",
+                device_class=BinarySensorDeviceClass.PROBLEM,
+            ),
+        )
+
+    @property
+    def available(self) -> bool:
+        # known as soon as the model has any level, device offline or not
+        return (super().available
+                or self.device.salt.level_kg is not None)
+
+    @property
+    def is_on(self) -> bool | None:
+        return self.device.salt.is_low
