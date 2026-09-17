@@ -147,7 +147,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass, device.fetch_sections,
             timedelta(minutes=max(1, device.section_interval)))
     )
-    entry.async_on_unload(lambda: hass.async_create_task(device.stop()))
+    async def _stop() -> None:
+        await device.stop()
+
+    entry.async_on_unload(_stop)
     entry.async_on_unload(entry.add_update_listener(_reload))
 
     hass.async_create_task(device.fetch_sections())

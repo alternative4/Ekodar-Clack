@@ -1,13 +1,13 @@
 """Buttons for the Clack Ekodar integration."""
 from __future__ import annotations
 
-from homeassistant.components.button import ButtonEntity
+from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CMD_REBOOT, CMD_SET_TIME, DAY_NAMES_EN, DOMAIN
-from .entity import ClackDeviceEntity, ClackEntityDescription
+from .entity import ClackDeviceEntity
 
 
 async def async_setup_entry(
@@ -22,7 +22,7 @@ class SyncTimeButton(ClackDeviceEntity, ButtonEntity):
     """Write HA's current wall time into the valve ({"command":208})."""
 
     def __init__(self, device) -> None:
-        super().__init__(device, ClackEntityDescription(
+        super().__init__(device, ButtonEntityDescription(
             key="sync_time", name="Sync valve clock"))
         self._attr_translation_key = "sync_time"
 
@@ -43,7 +43,7 @@ class RebootButton(ClackDeviceEntity, ButtonEntity):
     """Reboot the Wi-Fi module only (level:0). Never level:1 (factory reset)."""
 
     def __init__(self, device) -> None:
-        super().__init__(device, ClackEntityDescription(
+        super().__init__(device, ButtonEntityDescription(
             key="reboot", name="Reboot Wi-Fi module",
             entity_category=EntityCategory.CONFIG))
         self._attr_translation_key = "reboot"

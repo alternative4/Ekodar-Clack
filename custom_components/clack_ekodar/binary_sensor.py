@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .entity import ClackDeviceEntity, ClackEntityDescription
+from .entity import ClackDeviceEntity
 
 
 async def async_setup_entry(
@@ -30,7 +30,7 @@ class ClackRegeneratingBinarySensor(ClackDeviceEntity, BinarySensorEntity):
     def __init__(self, device) -> None:
         super().__init__(
             device,
-            ClackEntityDescription(
+            BinarySensorEntityDescription(
                 key="regenerating",
                 translation_key="regenerating",
             ),
@@ -48,7 +48,7 @@ class ClackNeedsSaltBinarySensor(ClackDeviceEntity, BinarySensorEntity):
     def __init__(self, device) -> None:
         super().__init__(
             device,
-            ClackEntityDescription(
+            BinarySensorEntityDescription(
                 key="service_alarm",
                 translation_key="service_alarm",
                 device_class=BinarySensorDeviceClass.PROBLEM,

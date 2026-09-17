@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.const import PERCENTAGE  # noqa: F401
@@ -15,7 +16,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, SECTION_INSTALLER, SECTION_REGEN, SECTION_TIME
-from .entity import ClackDeviceEntity, ClackEntityDescription
+from .entity import ClackDeviceEntity
 
 
 @dataclass(frozen=True)
@@ -136,10 +137,9 @@ async def async_setup_entry(
 
 class ClackSensor(ClackDeviceEntity, SensorEntity):
     def __init__(self, device, spec: Spec, getter: Callable) -> None:
-        desc = ClackEntityDescription(
+        desc = SensorEntityDescription(
             key=spec.key,
             translation_key=spec.key,
-            source=spec.source,
             entity_category=spec.category,
         )
         super().__init__(device, desc)

@@ -1,7 +1,7 @@
 {
   "domain": "clack_ekodar",
   "name": "Clack Ekodar (local MQTT)",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "documentation": "https://github.com/alternative4/Ekodar-Clack",
   "issue_tracker": "https://github.com/alternative4/Ekodar-Clack/issues",
   "dependencies": [
