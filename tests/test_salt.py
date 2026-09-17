@@ -1,8 +1,13 @@
-"""Unit tests for salt.py (pure model, no HA needed)."""
+"""Unit tests for the salt model (pure stdlib, no HA required).
+
+Run from repo root:  python3 -m unittest discover -s tests
+"""
+import os
 import sys
 import unittest
 
-sys.path.insert(0, "/home/dankaz/clack/hacs/clack-ekodar-mqtt/custom_components/clack_ekodar")
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..",
+                                "custom_components", "clack_ekodar"))
 
 from salt import RegenTracker, SaltConfig, SaltModel  # noqa: E402
 
