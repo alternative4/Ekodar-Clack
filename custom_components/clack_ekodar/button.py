@@ -62,8 +62,9 @@ class SaltAddedButton(ClackDeviceEntity, ButtonEntity):
 
     def __init__(self, device) -> None:
         super().__init__(device, ButtonEntityDescription(
-            key="salt_added", name="Salt added",
-            entity_category=EntityCategory.CONFIG))
+            key="salt_added", name="Salt added"))
+        # no entity_category: it is a daily-use action, must show on the
+        # device card (CONFIG/DIAGNOSTIC hides it under a settings tab)
         self._attr_translation_key = "salt_added"
 
     async def async_press(self) -> None:

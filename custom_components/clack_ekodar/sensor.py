@@ -163,6 +163,8 @@ async def async_setup_entry(
 
 
 class ClackSensor(ClackDeviceEntity, SensorEntity):
+    SALT_KEYS = ("salt_level", "salt_regen_remaining")
+
     def __init__(self, device, spec: Spec, getter: Callable) -> None:
         desc = SensorEntityDescription(
             key=spec.key,
@@ -189,3 +191,12 @@ class ClackSensor(ClackDeviceEntity, SensorEntity):
         if self.entity_description.key == "salt_level":
             return salt_attributes(self.device)
         return None
+
+    @property
+    def available(self) -> bool:
+        key = self.entity_description.key
+        if key in self.SALT_KEYS:
+            # salt state is local (Store-persisted), not device-derived:
+            # keep showing it even while the valve is offline
+            return True
+        return super().available
