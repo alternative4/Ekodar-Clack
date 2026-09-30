@@ -37,7 +37,9 @@ class ClackConfigFlow(ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(
         config_entry: ConfigEntry,
     ) -> "ClackOptionsFlow":
-        return ClackOptionsFlow(config_entry)
+        # HA >=2026.x: OptionsFlow takes no constructor args;
+        # self.config_entry is a property available at step time.
+        return ClackOptionsFlow()
 
     async def async_step_user(self, user_input=None) -> FlowResult:
         errors: dict[str, str] = {}
