@@ -62,6 +62,40 @@ The `salt_status` sensor drives the "add salt" notification; a ready
 The "start regeneration" command (`{"command":111}`) is deliberately **not**
 exposed as a UI button — trigger it from an automation if you want it.
 
+### Salt usage tracking
+
+The valve **cannot measure salt mass** — telemetry only carries capacity and
+time, so the per-regeneration dose comes from a human observation and the
+valve acts as the counter:
+
+```
+kg_per_regeneration = bag_mass_kg / regenerations_per_bag
+regen_remaining     = floor(salt_remaining_kg / kg_per_regeneration)
+```
+
+A regeneration is detected reliably from MQTT (transition `cmd 100→110` plus a
+`cap-remain` jump up, de-duplicated over a 6 h window); each detected cycle
+subtracts the dose, and the **Добавлена соль / Salt added** button adds one bag
+(clamped to the brine-tank capacity) and resets the warning.
+
+Configure in the integration options:
+
+| Option | Meaning |
+|---|---|
+| Bag mass (kg) | one bag's weight, default 25 |
+| Regenerations per bag | your observation (e.g. 10) |
+| kg per regeneration | direct override of the two above, if known |
+| Tank capacity (kg) | physical clamp for the brine tank |
+| Warn thresholds (kg / remaining regenerations) | when to nag |
+
+`salt_status` reports `ok` / `low` / `no_data` (tracking not started — never a
+false alarm) / `incomplete` (dose unknown → warning deferred with a hint to
+fill the options), with localized recommendations in its attributes. A
+ready-to-use `persistent_notification` automation is in
+[`docs/salt-alert-automation.yaml`](docs/salt-alert-automation.yaml); the full
+spec (edge cases, calibration, example math) in
+[`docs/salt-usage.md`](docs/salt-usage.md).
+
 ## Reconfiguring the board (one-time)
 
 The board enters setup mode when its stored configuration is empty — no
