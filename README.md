@@ -289,3 +289,7 @@ the same broker.
 ## License
 
 MIT
+
+Release history: [CHANGELOG.md](CHANGELOG.md). Versions are tagged `vX.Y.Z` in
+git; the version in `custom_components/clack_ekodar/manifest.json` is the
+source of truth.
