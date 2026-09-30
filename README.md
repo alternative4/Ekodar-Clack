@@ -51,6 +51,7 @@ topic, caches the payloads, and periodically polls configuration sections.
 | `regeneration_phase`, `regeneration_position`, `regeneration_time_left`, `regeneration_stage_time_left` | `command=110` |
 | `water_hardness` (mg-экв/л), `scheduled_regen_time`, `regen_days`, `regen_stages`, `valve_clock` | settings sections (read-only) |
 | `sync_time` (button) | `{"command":208,...}` |
+| `fetch_settings` (button) | `{"command":200,"section":201..208}` — re-read all settings sections on demand |
 | `reboot_module` (button) | `{"command":113,"level":0}` |
 | `salt_level` (kg), `salt_regen_remaining`, `salt_status` (enum: ok/low/no_data/incomplete, human message in attributes) | local salt model (see `docs/salt-usage.md`) |
 | `needs_salt` (binary, `problem`) | salt model thresholds |

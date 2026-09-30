@@ -66,6 +66,9 @@ class ClackDevice:
         self.status: dict = {}
         self.regen: dict | None = None
         self.sections: dict[int, dict] = {}
+        # after an HA restart the setup-time fetch can hit a broker that is not
+        # connected yet; retry once as soon as the device is first heard from
+        self._first_status_fetch = False
         self._listeners: list[Callable[[], None]] = []
         self._unsubs: list[Callable[[], None]] = []
         # salt accounting
@@ -156,6 +159,12 @@ class ClackDevice:
         if code == 100:
             self.status = data
             self.regen = None
+            if not self._first_status_fetch:
+                # first frame after (re)start: the valve is reachable now, so
+                # ask for settings instead of waiting for the next poll tick
+                self._first_status_fetch = True
+                if not self.sections:
+                    self.hass.async_create_task(self.fetch_sections())
         elif code == 110:
             self.regen = data
         elif 200 <= code < 300:

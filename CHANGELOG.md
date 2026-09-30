@@ -6,6 +6,18 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The version in `custom_components/clack_ekodar/manifest.json` is the source of
 truth; every release is tagged `vX.Y.Z` in git.
 
+## [0.3.0] - 2026-09-30
+
+### Added
+- `fetch_settings` button: on-demand re-read of all settings sections
+  (`{"command":200,"section":N}`). The valve never pushes settings, so after
+  an HA restart the settings sensors sat `unknown` until the next periodic
+  poll (default 30 min); the button refreshes them in ~2 s.
+- Auto-fetch settings on the first `command=100` frame after integration
+  startup when no section data is cached yet — fixes the same post-restart
+  `unknown` gap without user action (the setup-time fetch can run before the
+  MQTT broker reconnects).
+
 ## [0.2.5] - 2026-09-30
 
 ### Fixed

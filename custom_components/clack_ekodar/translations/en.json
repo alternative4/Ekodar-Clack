@@ -118,6 +118,9 @@
       },
       "salt_added": {
         "name": "Salt added"
+      },
+      "fetch_settings": {
+        "name": "Refresh valve settings"
       }
     }
   }

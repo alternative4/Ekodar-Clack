@@ -15,8 +15,27 @@ async def async_setup_entry(
 ) -> None:
     device = hass.data[DOMAIN][entry.entry_id]
     entities = [SyncTimeButton(device), RebootButton(device),
-                SaltAddedButton(device)]
+                SaltAddedButton(device), FetchSettingsButton(device)]
     async_add_entities(entities)
+
+
+class FetchSettingsButton(ClackDeviceEntity, ButtonEntity):
+    """On-demand read of all settings sections ({"command":200,"section":N}).
+
+    The valve only answers section requests — it never pushes settings — so
+    after an HA restart the settings sensors stay unknown until the periodic
+    poll. This button runs the same fetch immediately.
+    """
+
+    def __init__(self, device) -> None:
+        super().__init__(device, ButtonEntityDescription(
+            key="fetch_settings", name="Refresh valve settings",
+            icon="mdi:refresh"))
+        # no entity_category: daily-use action, must show on the device card
+        self._attr_translation_key = "fetch_settings"
+
+    async def async_press(self) -> None:
+        await self.device.fetch_sections()
 
 
 class SyncTimeButton(ClackDeviceEntity, ButtonEntity):
