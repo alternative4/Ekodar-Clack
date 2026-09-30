@@ -88,6 +88,28 @@ Configure in the integration options:
 | Tank capacity (kg) | physical clamp for the brine tank |
 | Warn thresholds (kg / remaining regenerations) | when to nag |
 
+**Computing the dose from valve settings** (instead of guessing bag usage): the
+valve's programmed exchange capacity and water hardness bound the physics, and
+the vendor regeneration table turns it into salt:
+
+```
+capacity_mg_ekv = capacity_remaining_max(L) × water_hardness(mg-ekv/L)
+resin_volume(L) ≈ capacity_mg_ekv / 880…950        (working capacity of standard gel resin)
+salt_kg_per_regen ≈ resin_volume × 0.12…0.15       (standard Clack dose, 120–150 g/L)
+```
+
+Worked example for a 1″ EM.S with 6557 L @ 6.1 mg-ekv/L: capacity ≈ 40 000
+mg-ekv → ~43 L of resin → 5.1–6.5 kg/regen; cross-checked against the brine
+*Fill* stage (5.25 min ≈ 20 L of refill water at 250–300 g/L saturating →
+5.0–6.0 kg). Adopted 5.4 kg/regen ≈ 120 g/L — the economical end of the dose
+range (salt efficiency ~43%; more salt buys little extra capacity, see Clack
+WS1 technical data). Set that as `salt_kg_per_regen` and the counters become
+real predictions, not observations.
+
+The **Salt added** button is **additive**: it raises the tracked level by one
+bag and clamps to the tank capacity (level 10 kg + 25 kg bag → 35 kg;
+50 + 25 with a 60 kg tank → 60). It never resets the level to a bag size.
+
 `salt_status` reports `ok` / `low` / `no_data` (tracking not started — never a
 false alarm) / `incomplete` (dose unknown → warning deferred with a hint to
 fill the options), with localized recommendations in its attributes. A
