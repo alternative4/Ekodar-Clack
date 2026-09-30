@@ -159,7 +159,13 @@ class ClackDevice:
         elif code == 110:
             self.regen = data
         elif 200 <= code < 300:
-            self.sections[code] = data
+            # section answers wrap the payload under a name, e.g.
+            # {"command":201,"Installer-Settings":{...}} — getters read the
+            # inner dict, so unwrap it (keep the frame if no dict value)
+            inner = next((v for k, v in data.items()
+                          if k not in ("command", "_seen")
+                          and isinstance(v, dict)), None)
+            self.sections[code] = inner if inner is not None else data
         else:
             changed = False
         if changed:
