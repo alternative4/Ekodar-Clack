@@ -66,7 +66,7 @@ SPECS: tuple[Spec, ...] = (
     Spec("capacity_percent", "Capacity remaining percent", "fn",
          ("capacity_percent",), "%", state_class=SensorStateClass.MEASUREMENT),
     Spec("salt_level", "Salt level", "fn", ("salt_level",),
-         UnitOfMass.KILOGRAMS, SensorDeviceClass.MASS,
+         UnitOfMass.KILOGRAMS, SensorDeviceClass.WEIGHT,
          SensorStateClass.MEASUREMENT),
     Spec("salt_regen_remaining", "Salt: regenerations left", "fn",
          ("salt_regen_remaining",), state_class=SensorStateClass.MEASUREMENT),
