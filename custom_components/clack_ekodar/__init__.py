@@ -158,7 +158,13 @@ class ClackDevice:
         changed = True
         if code == 100:
             self.status = data
-            self.regen = None
+            # Idle 100-frames keep flowing DURING a regeneration,
+            # interleaved with 110 — clearing regen on every 100 made the
+            # `regenerating` binary sensor flap at the ~30 s frame cadence.
+            # The tracker owns the session lifecycle: hold regen while a
+            # session is open (110 seen within END_GAP_S), drop it after.
+            if not self.regen_tracker.session_open:
+                self.regen = None
             if not self._first_status_fetch:
                 # first frame after (re)start: the valve is reachable now, so
                 # ask for settings instead of waiting for the next poll tick

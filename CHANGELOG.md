@@ -6,6 +6,18 @@ versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The version in `custom_components/clack_ekodar/manifest.json` is the source of
 truth; every release is tagged `vX.Y.Z` in git.
 
+## [0.3.1] - 2026-10-03
+
+### Fixed
+- `regenerating` binary sensor flapped on/off every ~30 s during a
+  regeneration: the valve keeps sending idle `command=100` frames
+  interleaved with `command=110`, and every 100-frame cleared the regen
+  session immediately. The `RegenTracker` session lifecycle (a session
+  ends only after `command=110` has been silent for 120 s) now owns the
+  clear, so `regenerating` stays on for the whole cycle — safe to use as
+  an automation trigger (e.g. keep the water supply open during
+  regeneration). Salt accounting (`on_regeneration` edge) is unchanged.
+
 ## [0.3.0] - 2026-09-30
 
 ### Added
